@@ -1,0 +1,35 @@
+name: collaiborate
+channels:
+  - conda-forge
+  - torch
+dependencies:
+  - pip=22.3.1
+  - python=3.9.7
+  - pip:
+    - torch==1.13.1
+    - numpy
+    - matplotlib
+    - svgwrite
+    - cairosvg
+    - six
+    - pillow
+    - svglib
+    - tqdm
+    - scikit-image
+    - pandas
+    - networkx
+    - numba
+    - scikit-learn
+    - umap-learn
+    - umap-learn[plot]
+    - shapely
+    - kivy
+    - wandb
+    - nbconvert==7.2.1
+    - lime
+    - umap-learn
+    - captum
+    - flask
+    - flask-restful
+    - flask_cors
+prefix: /Users/moritzduck/miniconda3/envs/collaiborate

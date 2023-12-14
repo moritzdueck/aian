@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { relationTypes, semanticTypes, relations, type SemanticType } from '../stores/relations';
+	import { relationTypes, semanticTypes, relations, type SemanticType, colorMap } from '../stores/relations';
 	import { tool } from '../stores/toolbar';
+	import MediaQuery from './MediaQuery.svelte';
+	import { getEntitiesById, getTextById, MODE} from '../api';
+	import type { Entity } from '../types';
 
 	export let textId: string = '1';
 	export let container: HTMLElement | undefined = undefined;
@@ -34,18 +37,7 @@
 		x2: 0,
 		y2: 0
 	};
-
-	interface Entity {
-		id: number;
-		candidate: string;
-		cui: string;
-		start: number;
-		end: number;
-		score: number;
-		semtype: string;
-		text_id: number;
-	}
-
+	
 	interface Node {
 		id: number;
 		start: number;
@@ -83,13 +75,16 @@
 	}
 
 	function createRelationSvg() {
+
+		let scrollTop = window.scrollY - 50;
+
 		let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 		svg.setAttribute('width', '100%');
 		svg.setAttribute('height', '100%');
 		svg.style.width = '100%';
 		svg.style.height = '100%';
 		svg.style.position = 'absolute';
-		svg.style.top = (container!.scrollTop - 50).toString() + 'px';
+		svg.style.top = (scrollTop).toString() + 'px';
 		svg.style.left = '0';
 		svg.style.zIndex = $tool === 'delete' ? '1' : '-1';
 		svg.classList.add('existing-connection');
@@ -125,12 +120,14 @@
 			circle1.setAttribute('cy', rect1CenterY.toString());
 			circle1.setAttribute('r', '10');
 			circle1.setAttribute('fill', color);
+			circle1.style.opacity = '0.5';
 
 			let circle2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 			circle2.setAttribute('cx', rect2CenterX.toString());
 			circle2.setAttribute('cy', rect2CenterY.toString());
 			circle2.setAttribute('r', '10');
 			circle2.setAttribute('fill', color);
+			circle2.style.opacity = '0.5';
 
 			let line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 			line.setAttribute('x1', rect1CenterX.toString());
@@ -139,21 +136,49 @@
 			line.setAttribute('y2', rect2CenterY.toString());
 			line.setAttribute('stroke', color);
 			line.setAttribute('stroke-width', '4');
+			line.style.opacity = '0.5';
 
 			g.appendChild(line);
 
 			if ($tool === 'delete') {
-				console.log('adding delete area');
+
+				let delCircle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+				delCircle1.setAttribute('cx', rect1CenterX.toString());
+				delCircle1.setAttribute('cy', rect1CenterY.toString());
+				delCircle1.setAttribute('r', '10');
+				delCircle1.setAttribute('fill', 'var(--red)');
+				delCircle1.style.zIndex = '3';
+
+				let delCircle2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+				delCircle2.setAttribute('cx', rect2CenterX.toString());
+				delCircle2.setAttribute('cy', rect2CenterY.toString());
+				delCircle2.setAttribute('r', '10');
+				delCircle2.setAttribute('fill', 'var(--red)');
+				delCircle2.style.zIndex = '3';
 
 				let deleteArea = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 				deleteArea.setAttribute('x1', rect1CenterX.toString());
 				deleteArea.setAttribute('y1', rect1CenterY.toString());
 				deleteArea.setAttribute('x2', rect2CenterX.toString());
 				deleteArea.setAttribute('y2', rect2CenterY.toString());
-				deleteArea.setAttribute('stroke', '#ff8787');
+				deleteArea.setAttribute('stroke', 'var(--red)');
 				deleteArea.setAttribute('stroke-width', '10');
 				deleteArea.style.zIndex = '3';
 				deleteArea.style.cursor = 'pointer';
+
+				delCircle1.addEventListener('click', () => {
+					$relations = $relations.filter(
+						(relation) => !(relation.head === entityId1 && relation.tail === entityId2)
+					);
+					redoRelations();
+				});
+
+				delCircle2.addEventListener('click', () => {
+					$relations = $relations.filter(
+						(relation) => !(relation.head === entityId1 && relation.tail === entityId2)
+					);
+					redoRelations();
+				});
 
 				deleteArea.addEventListener('click', () => {
 					$relations = $relations.filter(
@@ -163,6 +188,8 @@
 				});
 
 				g.append(deleteArea);
+				g.append(delCircle1);
+				g.append(delCircle2);
 			}
 
 			g.appendChild(circle1);
@@ -332,11 +359,15 @@
 
 	async function fetchData(textId: string) {
 		if (textId) {
-			const response = await fetch('http://127.0.0.1:5003/texts/' + textId);
-			data = await response.json();
+			// const response = await fetch('http://127.0.0.1:5003/texts/' + textId);
+			// data = await response.json();
 
-			const entitiesResponse = await fetch('http://127.0.0.1:5003/entities/' + textId);
-			entities = await entitiesResponse.json();
+			// const entitiesResponse = await fetch('http://127.0.0.1:5003/entities/' + textId);
+			// entities = await entitiesResponse.json();
+
+			data = await getTextById(textId, MODE)
+			entities = await getEntitiesById(textId, MODE)
+
 			entities.sort((a, b) => (a.start > b.start ? 1 : -1));
 
 			console.log(entities.length);
@@ -372,7 +403,11 @@
 		setTimeout(() => {
 			console.log(container);
 			window.addEventListener('resize', redoRelations);
-			container!.addEventListener('scroll', redoRelations);
+			window.addEventListener('scroll', redoRelations);
+			window.addEventListener('touchmove', redoRelations);
+			// container!.addEventListener('scroll', redoRelations);
+			// container!.addEventListener('touchmove', redoRelations);
+
 			tool.subscribe((tool) => {
 				redoRelations();
 			});
@@ -380,6 +415,7 @@
 	});
 </script>
 
+<MediaQuery query="(min-width: 1024px)" let:matches>
 <main on:mousemove={handleMousemove}>
 	{#if data}
 		<div class="flex align-items-center justify-center">
@@ -391,13 +427,14 @@
 						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<span
 							class="entity"
+							class:selected={headEntity == nodes[index] || tailEntity == nodes[index]}
 							role="button"
 							tabindex="0"
 							id="ent-{nodes[index].id}"
-							on:mouseenter={() => (activeIndex = index)}
-							on:mouseleave={() => (activeIndex = -1)}
+							on:mouseenter={() => matches? (activeIndex = index) : null}
+							on:mouseleave={() => matches? (activeIndex = -1) : null}
 							on:click|self={onEntityClick(index)}
-							>{nodes[index].text}
+							> {nodes[index].text}
 
 							{#if activeIndex === index && !showConnection && !($tool === 'delete')}
 								<div class="entity-details">
@@ -406,26 +443,48 @@
 								</div>
 							{/if}
 
-							{#if annotationState === 'type' && tailEntity === nodes[index]}'
-								<div class="card card-compact w-64 bg-base-100 shadow-xl relation-type-select">
-									<div class="card-body">
-										<p class="font-bold">Select the relation type</p>
+							{#if annotationState === 'type' && tailEntity === nodes[index]}
 
-										<div class="join join-vertical relation-type-options">
-											{#each $relationTypes as relationType}
-												<button
-													on:click={() => onAnnotationTypeSelect(relationType.key)}
-													class="btn btn-sm btn-ghost join-item">{relationType.name}</button
-												>
-											{/each}
+									{#if matches}
+										<div class="card card-compact w-64 bg-base-100 shadow-xl relation-type-select">
+											<div class="card-body">
+												<p class="font-bold">Select the relation type</p>
+		
+												<div class="join join-vertical relation-type-options">
+													{#each $relationTypes as relationType}
+														<button
+															on:click={() => onAnnotationTypeSelect(relationType.key)}
+															class="btn btn-sm join-item">{relationType.name}</button
+														>
+													{/each}
+												</div>
+											</div>
+		
+											<button on:click={() => abortAnnotation()} class="btn join-item">Cancel</button>
 										</div>
-									</div>
+									{:else}
+										<div class="card card-compact bg-base-100 shadow-xl relation-type-select-mobile">
+											<div class="card-body">
+												<p class="font-bold">Select the relation type</p>
+		
+												<div class="join join-vertical relation-type-options">
+													{#each $relationTypes as relationType}
+														<button
+															on:click={() => onAnnotationTypeSelect(relationType.key)}
+															class="btn btn-sm join-item active:bg-gray-900/20">{relationType.name}</button
+														>
+													{/each}
+												</div>
+											</div>
+		
+											<button on:click={() => abortAnnotation()} class="btn join-item">Cancel</button>
+										</div>
+									{/if}
 
-									<button on:click={() => abortAnnotation()} class="btn join-item">Cancel</button>
-								</div>
+								
 							{/if}
 
-							{#if headEntity == nodes[index] && showConnection}
+							{#if headEntity == nodes[index] && showConnection && matches}
 								<svg
 									bind:this={line}
 									class="connection"
@@ -466,6 +525,7 @@
 		<p>No text loaded yet...</p>
 	{/if}
 </main>
+</MediaQuery>
 
 <style>
 	span.entity {
@@ -475,6 +535,14 @@
 		user-select: none;
 		position: relative;
 		display: inline-block;
+		outline: 1px solid var(--light-gray);
+	}
+
+	span.entity.selected {
+		background-color: var(--primary-color);
+		outline: none;
+		border-radius: 5px;
+		color: white;
 	}
 
 	.entity:hover {
@@ -507,11 +575,29 @@
 		max-width: 1000px;
 	}
 
+	@media (max-width: 1024px) {
+		.text-container {
+			padding: 25px;
+		}
+	}
+
 	.relation-type-select {
+		color: black;
 		position: fixed;
 		left: calc((100vw - 806px) / 2);
 		top: calc(20%);
 		z-index: 2;
+	}
+
+	.relation-type-select-mobile {
+		color: black;
+		position: fixed;
+		left: 0;
+		bottom: 0;
+		width: 100vw;
+		z-index: 2;
+		max-height: calc(100vh - 50px);
+		overflow: auto;
 	}
 
 	.relation-type-options {

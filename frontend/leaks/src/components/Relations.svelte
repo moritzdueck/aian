@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { relationTypes, relations } from '../stores/relations';
+	import { colorMap, relationTypes, relations } from '../stores/relations';
 
 	export let textId: string = '1';
 
@@ -80,4 +80,13 @@
 </main>
 
 <style>
+
+	.color-indicator {
+		display: inline-block;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		opacity: 0.5;
+		
+	}
 </style>

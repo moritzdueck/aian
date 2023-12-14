@@ -1,14 +1,47 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
+import { category10 } from "../utils/color";
 
 export type SemanticType = 'aapp' | 'acab' | 'acty' | 'aggp' | 'amas' | 'amph' | 'anab' | 'anim' | 'anst' | 'antb' | 'arch' | 'bacs' | 'bact' | 'bdsu' | 'bdsy' | 'bhvr' | 'biof' | 'bird' | 'blor' | 'bmod' | 'bodm' | 'bpoc' | 'bsoj' | 'celc' | 'celf' | 'cell' | 'cgab' | 'chem' | 'chvf' | 'chvs' | 'clas' | 'clna' | 'clnd' | 'cnce' | 'comd' | 'crbs' | 'diap' | 'dora' | 'drdd' | 'dsyn' | 'edac' | 'eehu' | 'elii' | 'emod' | 'emst' | 'enty' | 'enzy' | 'euka' | 'evnt' | 'famg' | 'ffas' | 'fish' | 'fndg' | 'fngs' | 'food' | 'ftcn' | 'genf' | 'geoa' | 'gngm' | 'gora' | 'grpa' | 'grup' | 'hcpp' | 'hcro' | 'hlca' | 'hops' | 'horm' | 'humn' | 'idcn' | 'imft' | 'inbe' | 'inch' | 'inpo' | 'inpr' | 'irda' | 'lang' | 'lbpr' | 'lbtr' | 'mamm' | 'mbrt' | 'mcha' | 'medd' | 'menp' | 'mnob' | 'mobd' | 'moft' | 'mosq' | 'neop' | 'nnon' | 'npop' | 'nusq' | 'ocac' | 'ocdi' | 'orch' | 'orga' | 'orgf' | 'orgm' | 'orgt' | 'ortf' | 'patf' | 'phob' | 'phpr' | 'phsf' | 'phsu' | 'plnt' | 'podg' | 'popg' | 'prog' | 'pros' | 'qlco' | 'qnco' | 'rcpt' | 'rept' | 'resa' | 'resd' | 'rnlw' | 'sbst' | 'shro' | 'socb' | 'sosy' | 'spco' | 'tisu' | 'tmco' | 'topp' | 'virs' | 'vita' | 'vtbt';
 
 export let relationTypes = writable([] as {name: string, key: string}[]);
 export let relations = writable([] as {head: number, tail: number, type: string, docId: number}[]);
+export let colorMap = writable({} as {[key: string]: string});
+
+
+relationTypes.subscribe((relations) => {   
+        let relationKeys = relations.map((relation) => relation.key);
+        let newColorMap = {} as {[key: string]: string};
+
+``        
+        let colorScheme = category10;
+        let i = 0;
+        for (let key of relationKeys) {
+            if (!newColorMap[key]){
+                newColorMap[key] = colorScheme[i];
+                i++;
+            }
+        }
+
+        colorMap.set(newColorMap);
+
+    });
+
+
+export let defaultRelationTypes = [
+    {name: 'causes', key: 'causes'},
+    {name: 'treats', key: 'treats'},
+    {name: 'diagnoses', key: 'diagnoses'},
+    {name: 'reveals', key: 'reveals'},
+    {name: 'investigates', key: 'investigates'},
+    {name: 'prevents', key: 'prevents'},
+    {name: 'location', key: 'location'},
+    {name: 'indicates', key: 'indicates'},
+] 
 
 if (browser){
     const relationTypesFromLocalStorage = browser && localStorage.relationTypes;
-    relationTypes.set(relationTypesFromLocalStorage && JSON.parse(relationTypesFromLocalStorage) || [{name: 'causes', key: 'causes'}])
+    relationTypes.set(relationTypesFromLocalStorage && JSON.parse(relationTypesFromLocalStorage) || defaultRelationTypes)
     relationTypes.subscribe((value) => localStorage.relationTypes = JSON.stringify(value || []));
 
     const relationsFromLocalStorage = browser && localStorage.relations;

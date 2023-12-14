@@ -1,10 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { relationTypes, relations } from '../stores/relations';
+	import { defaultRelationTypes, relationTypes, relations } from '../stores/relations';
 
 	let json: string = '';
 
 	onMount(() => {
+		json = JSON.stringify(
+			{
+				relations: $relations,
+				relationTypes: $relationTypes
+			},
+			null,
+			2
+		);
+	});
+
+	relations.subscribe(() => {
 		json = JSON.stringify(
 			{
 				relations: $relations,
@@ -20,11 +31,17 @@
 		$relations = data.relations;
 		$relationTypes = data.relationTypes;
 	}
+
+	function reset() {
+		$relations = [];
+		$relationTypes = defaultRelationTypes;
+	}
 </script>
 
 <div>
 	<textarea bind:value={json} class="edit-json" />
 	<button class="btn ml-5" on:click={save}>Save</button>
+	<button class="btn ml-5" on:click={reset}>Reset</button>
 </div>
 
 <style>

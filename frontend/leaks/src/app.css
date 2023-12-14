@@ -4,11 +4,15 @@
 
 :root {
     --primary-color: #0a58cc;
+    --primary-color-light: #e6f0ff;
+    
     --light-gray: #dddddd;
-
     --surface1: #ffffff;
     --surface2: #F8F8F8;
 
-    --red: #ff8181;
+    --red: #f26e6e;
     --red-light: #ffdcdc;
+
+    --green: #44bdb4;
+    --green-light: #d9f7f6;
 }

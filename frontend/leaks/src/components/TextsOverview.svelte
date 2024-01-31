@@ -2,15 +2,16 @@
 	import { onMount } from 'svelte';
 	import { relationTypes, relations } from '../stores/relations';
 	import { page, textId } from '../stores/global';
-	import response from '../data/documents'
 	import MediaQuery from './MediaQuery.svelte';
+	import { MODE, getDocuments } from '../api';
 
 	let data: { title: string; id: number }[];
 
 	async function fetchData() {
-		// const response = await fetch('http://127.0.0.1:5003/texts');
-		// data = await response.json();
-		data = response
+		let x = await getDocuments(MODE);
+		if(x){
+			data = x;
+		}
 	}
 
 	let counts: { [relType: string]: { [docId: number]: number } } = {};

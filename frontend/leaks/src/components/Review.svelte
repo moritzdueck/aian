@@ -1,26 +1,21 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { getEntitiesById, getTextById, MODE } from '../api';
 	import { relations } from '../stores/relations';
 	import type { Entity } from '../types';
 
 	export let textId: string = '1';
+	export let text: { abstract: string; text: string; title: string } | undefined;
+	export let entities: Entity[] | undefined = [];
 
-	let text: { abstract: string; text: string; title: string } | undefined;
-	let entities: Entity[] | undefined = [];
+    let showDetails: boolean[] = [];
 
-    $: relationsInText = $relations.filter(r => r.docId === Number.parseInt(textId));
-
-	onMount(() => {
-		fetchData(textId);
-	});
-
-	async function fetchData(textId: string) {
-		if (textId) {
-			text = await getTextById(textId, MODE);
-			entities = await getEntitiesById(textId, MODE);
-		}
-	}
+    $: relationsInText = $relations.filter(r => r.docId === Number.parseInt(textId)).map(r => {
+        return {
+            head: text?.text.substring( entities?.find(e => e.id === r.head)?.start || 0, entities?.find(e => e.id === r.head)?.end || 0),
+            type: r.type,
+            tail: text?.text.substring( entities?.find(e => e.id === r.tail)?.start || 0, entities?.find(e => e.id === r.tail)?.end || 0),
+            rel: r,
+        }
+    });
 
     function deleteRelation(relation: any) {
         relations.update(rels => rels.filter(r => r !== relation));
@@ -28,20 +23,56 @@
 </script>
 
 <div class="review">
-	{#each relationsInText as relation}
+	{#each relationsInText as relation, index}
 		<div class="relation-for-review">
-            <div>
-                <span class="head">{entities?.find(e => e.id === relation.head)?.candidate}</span>
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div on:click={() => showDetails = true}>
+                <span class="head">{relation.head}</span>
                 <span>{relation.type}</span>
-                <span class="tail">{entities?.find(e => e.id === relation.tail)?.candidate}</span>
+                <span class="tail">{relation.tail}</span>
             </div>
             <div class="delete-button">
-                <button class="btn btn-xs btn-ghost btn-danger" on:click={() => deleteRelation(relation)}>
+                <button class="btn btn-xs btn-ghost btn-danger" on:click={() => deleteRelation(relation.rel)}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                     </svg>                 
                 </button>
             </div>
+
+            {#if showDetails}
+                <div class="border-top">
+                    {text?.text.substring(
+                        Math.max(0, (entities?.find(e => e.id === relation.rel.head)?.start || 0) - 100 ),
+                        entities?.find(e => e.id === relation.rel.head)?.start || 0
+                    )}
+
+                    <span class="entity head">
+                        {text?.text.substring(
+                            (entities?.find(e => e.id === relation.rel.head)?.start || 0),
+                            (entities?.find(e => e.id === relation.rel.head)?.end || 0)
+                        )}
+                    </span>
+
+                    {text?.text.substring(
+                        (entities?.find(e => e.id === relation.rel.head)?.end || 0),
+                        (entities?.find(e => e.id === relation.rel.tail)?.start || 0)
+                    )}
+
+                    <span class="entity tail">
+                        {text?.text.substring(
+                            (entities?.find(e => e.id === relation.rel.tail)?.start || 0),
+                            (entities?.find(e => e.id === relation.rel.tail)?.end || 0)
+                        )}
+                    </span>
+
+                    {text?.text.substring(
+                        (entities?.find(e => e.id === relation.rel.tail)?.end || 0),
+                        Math.min(text?.text.length || 0, (entities?.find(e => e.id === relation.rel.tail)?.end || 0) + 100)
+                    )}
+
+                </div>
+            {/if}
 		</div>
 	{/each}
 </div>
@@ -54,7 +85,7 @@
 
 .relation-for-review {
     margin-bottom: 10px;
-    border: 1px solid black;
+    border: 1px solid var(--light-grey);
     padding: 5px;
     display: grid;
     grid-template-columns: 1fr 80px;
@@ -67,12 +98,18 @@
 }
 
 .head {
-    color: var(--green);
+    color: var(--primary-color);
     font-weight: bold;
 }
 
 .tail {
-    color: var(--red);
+    color: var(--primary-color);
     font-weight: bold;
+}
+
+.border-top {
+    border-top: 1px solid var(--light-grey);
+    padding-top: 10px;
+    margin-top: 10px;
 }
 </style>

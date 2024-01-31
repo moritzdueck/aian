@@ -1,16 +1,14 @@
 <script lang="ts">
-	import { tool } from "../stores/toolbar";
-	import { page } from "../stores/global";
+	import { mode, page } from "../stores/global";
 
-    export let showTools: boolean = false;
     export let showRelationSettings: boolean = false;
-
-    function gotoResults() {
-        $page = 1;
-    }
 
     function gotoHome() {
         $page = 0;
+    }
+
+    function gotoResults() {
+        $page = 1;
     }
 
     function gotoText() {
@@ -23,6 +21,10 @@
 
     function gotoReview() {
         $page = 4;
+    }
+
+    function gotoExplorer() {
+        $page = 5;
     }
 
 </script>
@@ -50,21 +52,27 @@
 <div class="toolbar">
 
     <div>
-
-        {#if showTools}
-        <button class="btn btn-ghost" class:active={$tool === 'add'} on:click={() => $tool = 'add'}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-              </svg>          
-        </button>
-    
-        <button class="btn btn-ghost" class:active={$tool === 'delete'} on:click={() => $tool = 'delete'}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-              </svg>          
-        </button>
-    
+        {#if $page === 2}
+            {#if $mode === 'relation'}
+            <button class="btn btn-ghost"  on:click={() => $mode = 'entity'}>
+                <svg class="w-6 h-6" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="23.4827" width="40.6207" height="17.0345" rx="1.31034" fill="white"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M51.4811 49.1074L51.4811 16.9312L55.4121 16.9312L55.4121 49.1074L51.4811 49.1074Z" fill="white"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M61.9642 14.9655C61.9642 16.051 61.0842 16.931 59.9987 16.931H46.8952C45.8097 16.931 44.9297 16.051 44.9297 14.9655V14.9655C44.9297 13.88 45.8097 13 46.8952 13H59.9987C61.0842 13 61.9642 13.88 61.9642 14.9655V14.9655Z" fill="white"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M61.9642 49.0344C61.9642 50.1199 61.0842 50.9999 59.9987 50.9999H46.8952C45.8097 50.9999 44.9297 50.1199 44.9297 49.0344V49.0344C44.9297 47.9488 45.8097 47.0688 46.8952 47.0688H59.9987C61.0842 47.0688 61.9642 47.9488 61.9642 49.0344V49.0344Z" fill="white"/>
+                </svg>                        
+            </button>
+            {:else}
+            <button class="btn btn-ghost"  on:click={() =>  $mode = 'relation'}>
+                <svg class="w-6 h-6" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="14.0358" cy="45.9242" r="9.03581" fill="white"/>
+                    <circle cx="50.2897" cy="18.0358" r="9.03581" fill="white"/>
+                    <line x1="10.292" y1="48.8589" x2="53.0944" y2="16.5355" stroke="white" stroke-width="5.57767"/>
+                </svg>                               
+            </button>
+            {/if}
         {/if}
+
         {#if showRelationSettings && $page === 2}
             <button class="btn btn-ghost"  on:click={() => gotoRelations()}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -76,9 +84,8 @@
 
             <button class="btn btn-ghost"  on:click={() => gotoReview()}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>                                   
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>                                               
             </button>
 
         {/if}
@@ -95,11 +102,22 @@
     
 
     <div>
+        {#if $page === 0}
         <button class="btn btn-ghost" on:click={() => gotoResults()}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
               </svg>                
         </button>
+        {/if}
+
+        {#if $page === 0}
+        <button class="btn btn-ghost" on:click={() => gotoExplorer()}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+            </svg>
+        </button>
+        {/if}
 
         <button class="btn btn-ghost" on:click={() => gotoHome()}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">

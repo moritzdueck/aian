@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { relations } from '../stores/relations';
 	import type { Entity } from '../types';
+    import {onMount} from "svelte";
 
 	export let textId: string = '1';
 	export let text: { abstract: string; text: string; title: string } | undefined;
@@ -8,14 +9,29 @@
 
     let showDetails: boolean[] = [];
 
-    $: relationsInText = $relations.filter(r => r.docId === Number.parseInt(textId)).map(r => {
-        return {
-            head: text?.text.substring( entities?.find(e => e.id === r.head)?.start || 0, entities?.find(e => e.id === r.head)?.end || 0),
-            type: r.type,
-            tail: text?.text.substring( entities?.find(e => e.id === r.tail)?.start || 0, entities?.find(e => e.id === r.tail)?.end || 0),
-            rel: r,
-        }
-    });
+    let relationsInText: any[] = [];
+
+    onMount(() => {
+        relations.subscribe(rels => {
+
+            relationsInText  = rels.filter(r => r.docId === Number.parseInt(textId))
+                .map(r => ({
+                    headEntity: entities?.find(e => e.id === r.head),
+                    tailEntity: entities?.find(e => e.id === r.tail),
+                    type: r.type,
+                    rel: r,
+                }))
+                .map(r => ({
+                    sections: r.headEntity.start < r.tailEntity.start
+                        ? [r.headEntity.start -100, r.headEntity.start, r.headEntity.end, r.tailEntity.start, r.tailEntity.end, r.tailEntity.end + 100]
+                        : [r.tailEntity.start -100, r.tailEntity.start, r.tailEntity.end, r.headEntity.start, r.headEntity.end, r.headEntity.end + 100],
+                    head: text?.text.substring(r.headEntity.start, r.headEntity.end),
+                    tail: text?.text.substring(r.tailEntity.start, r.tailEntity.end),
+                    type: r.type,
+                    rel: r.rel,
+                }))
+        })
+    })
 
     function deleteRelation(relation: any) {
         relations.update(rels => rels.filter(r => r !== relation));
@@ -42,35 +58,11 @@
 
             {#if showDetails}
                 <div class="border-top">
-                    {text?.text.substring(
-                        Math.max(0, (entities?.find(e => e.id === relation.rel.head)?.start || 0) - 100 ),
-                        entities?.find(e => e.id === relation.rel.head)?.start || 0
-                    )}
-
-                    <span class="entity head">
-                        {text?.text.substring(
-                            (entities?.find(e => e.id === relation.rel.head)?.start || 0),
-                            (entities?.find(e => e.id === relation.rel.head)?.end || 0)
-                        )}
-                    </span>
-
-                    {text?.text.substring(
-                        (entities?.find(e => e.id === relation.rel.head)?.end || 0),
-                        (entities?.find(e => e.id === relation.rel.tail)?.start || 0)
-                    )}
-
-                    <span class="entity tail">
-                        {text?.text.substring(
-                            (entities?.find(e => e.id === relation.rel.tail)?.start || 0),
-                            (entities?.find(e => e.id === relation.rel.tail)?.end || 0)
-                        )}
-                    </span>
-
-                    {text?.text.substring(
-                        (entities?.find(e => e.id === relation.rel.tail)?.end || 0),
-                        Math.min(text?.text.length || 0, (entities?.find(e => e.id === relation.rel.tail)?.end || 0) + 100)
-                    )}
-
+                    <span>...{text?.text.substring(relation.sections[0], relation.sections[1])}</span>
+                    <span class="entity">{text?.text.substring(relation.sections[1], relation.sections[2])}</span>
+                    <span>{text?.text.substring(relation.sections[2], relation.sections[3])}</span>
+                    <span class="entity">{text?.text.substring(relation.sections[3], relation.sections[4])}</span>
+                    <span>{text?.text.substring(relation.sections[4], relation.sections[5])}...</span>
                 </div>
             {/if}
 		</div>
@@ -97,15 +89,11 @@
     align-items: center;
 }
 
-.head {
+.head, .tail, .entity {
     color: var(--primary-color);
     font-weight: bold;
 }
 
-.tail {
-    color: var(--primary-color);
-    font-weight: bold;
-}
 
 .border-top {
     border-top: 1px solid var(--light-grey);
